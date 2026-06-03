@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk2.0-0 libcanberra-gtk-module libcanberra-gtk3-module \
     libx11-xcb1 libxcb1 libxcb-util1 \
     libgl1-mesa-glx libgl1-mesa-dri xcompmgr psmisc \
+    socat \
     && rm -rf /var/lib/apt/lists/*
 
 # ── 强制软件渲染 + Qt 兼容 ─────────────────────────

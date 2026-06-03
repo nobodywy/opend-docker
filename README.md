@@ -119,7 +119,7 @@ docker compose down && docker compose up -d --build
 
 ### 自动登录（可选）
 
-编辑 `docker-compose.yml`，取消注释：
+编辑 `docker-compose.yml`，添加环境变量：
 
 ```yaml
 environment:
@@ -129,9 +129,69 @@ environment:
 
 然后 `docker compose up -d` 重建，容器启动时会自动填入账号密码。
 
+> ⚠️ 自动填入密码后仍需手动完成手机验证码（见下方[排障章节](#-常见问题--排障)）。
+
 ### 自定义 OpenD 配置
 
 把自定义 `OpenD.xml` 放到 `opend-config/` 目录，容器启动时自动使用它。
+
+---
+
+## 🔧 常见问题 & 排障
+
+### GUI 桌面打开但看不到 OpenD 窗口
+
+**症状**：浏览器打开 `http://<OPEND_IP>:6080` 能看到 noVNC 灰色桌面，但上面没有 OpenD 登录窗口。
+
+**原因**：OpenD GUI 在 Docker 软件渲染环境下可能无法正确绘制窗口（Qt/X11 兼容性问题），但 OpenD 进程本身正常运行，API 端口 `11111` 和 Telnet 端口 `22222` 都已就绪。
+
+**解决**：**不要依赖 GUI，直接用 Telnet CLI 完成首次登录。**
+
+#### 🔑 通过 Telnet CLI 完成登录
+
+```bash
+# 进入容器
+docker exec -it opend bash
+
+# 安装 socat（如果 Dockerfile 版本较旧未预装）
+apt-get install -y socat
+
+# 查看 OpenD 日志，确认进入了验证码阶段
+cat /root/.com.futunn.FutuOpenD/Log/GTWLog_0_*.log | grep "phone_verify_code" | tail -3
+# → 看到 "req_phone_verify_code" 说明在等验证码
+
+# 发送验证码（⚠️ 必须用 \r\n 结尾！\n 不够）
+printf 'input_phone_verify_code -code=123456\r\n' | socat -t10 - TCP:localhost:22222
+```
+
+#### ⚠️ 踩坑记录
+
+| 方法 | 结果 | 原因 |
+|------|------|------|
+| `echo ... \| nc` | ❌ RecvFailed | `nc` 在管道模式下连接后立即关闭，来不及发数据 |
+| `printf '...\n' \| socat` | ❌ 无响应 | OpenD Telnet 需要 `\r\n`，仅 `\n` 不识别 |
+| `bash /dev/tcp` | ❌ 发不出去 | Docker 容器内 `/dev/tcp` 伪设备不稳定 |
+| `printf '...\r\n' \| socat` | ✅ 成功 | **唯一可靠方式** |
+
+#### 📋 常用 Telnet 命令
+
+| 命令 | 说明 |
+|------|------|
+| `req_phone_verify_code` | 请求发送手机验证码 |
+| `input_phone_verify_code -code=123456` | 输入验证码完成登录 |
+| `help` | 查看所有可用命令 |
+
+### 登录成功后验证
+
+```bash
+# OpenD 日志应显示 "登录成功"
+docker logs opend 2>&1 | grep -E "登录成功|LoginSuccess"
+
+# API 端口应正常监听
+docker exec opend ss -tlnp | grep 11111
+# 或
+docker exec opend netstat -tlnp | grep 11111
+```
 
 ---
 

@@ -16,30 +16,39 @@
 ## 🏠 在你的网络里长什么样
 
 ```
-飞牛 NAS (<NAS_IP>)
-  ├─ OpenClaw (<OPENCLAW_IP>) ── Python SDK → 调 OpenD API
-  ├─ 小红书 MCP (<MCP_IP>)
-  ├─ OpenD (<OPEND_IP>) ← 新增
+飞牛 NAS
+  ├─ OpenClaw ── Python SDK → 调 OpenD API
+  ├─ OpenD (macvlan 独立 IP) ← 新增
   │    ├─ :11111  API 端口
   │    └─ :6080   Web GUI (浏览器打开看桌面)
-  └─ NPM 反代 → 外网访问
+  └─ NPM 反代 → 外网访问（可选）
 ```
 
-## 📦 部署（3 步）
+## 📦 部署（4 步）
 
-### 第 1 步：把项目拉到飞牛
+### 第 1 步：设置静态 IP
+
+编辑 `docker-compose.yml`，修改 OpenD 的 macvlan 静态 IP：
+
+```yaml
+networks:
+  openclaw_lan_net:
+    ipv4_address: <你的 OpenD IP>
+```
+
+### 第 2 步：把项目拉到飞牛
 
 ```bash
 # SSH 进飞牛
-ssh admin@<NAS_IP>
+ssh <用户名>@<NAS_IP>
 
-# 克隆
+# 克隆（替换为你的仓库地址）
 cd ~
 git clone https://github.com/<YOUR_GITHUB>/opend-docker.git
 cd opend-docker
 ```
 
-### 第 2 步：一键安装
+### 第 3 步：一键安装
 
 ```bash
 chmod +x setup.sh
@@ -52,7 +61,7 @@ bash setup.sh
 3. 构建镜像（首次 ~3-5 分钟）
 4. 启动容器
 
-### 第 3 步：打开 Web GUI 登录
+### 第 4 步：打开 Web GUI 登录
 
 浏览器打开：**`http://<OPEND_IP>:6080`**
 
@@ -107,11 +116,11 @@ docker compose down && docker compose up -d --build
 
 | 项目 | 值 |
 |------|-----|
-| 域名 | `opend.<YOUR_DOMAIN>` |
+| 域名 | `opend.<你的域名>` |
 | 目标 | `http://<OPEND_IP>:6080` |
 | WebSocket | ✅ 开启 |
 
-然后手机/外网浏览器访问 `https://opend.<YOUR_DOMAIN>` 就能远程操作 OpenD。
+然后手机/外网浏览器访问 `https://opend.<你的域名>` 就能远程操作 OpenD。
 
 ---
 

@@ -51,14 +51,16 @@ fi
 OPEND_DIR=$(dirname "$OPEND_BIN")
 echo "✅ 找到 OpenD: $OPEND_DIR"
 
-# 把整个目录内容移到 /opt/FutuOpenD/
-mkdir -p /opt/FutuOpenD
-shopt -s dotglob
-cp -a "$OPEND_DIR"/* /opt/FutuOpenD/
-shopt -u dotglob
+# 把内层目录整体移到 /opt/FutuOpenD/
+# （OpenD tarball 可能是 Futu_OpenD_x.x/Futu_OpenD_x.x/FutuOpenD 双层嵌套）
+if [ "$OPEND_DIR" != "/opt/FutuOpenD" ]; then
+    rm -rf /opt/FutuOpenD 2>/dev/null || true
+    mv "$OPEND_DIR" /opt/FutuOpenD
+    echo "✅ 移至 /opt/FutuOpenD"
+fi
 
-# 删除解压产生的残余目录
-find /opt -maxdepth 1 -type d ! -name FutuOpenD ! -name . -exec rm -rf {} \; 2>/dev/null || true
+# 清理外层残余空目录
+find /opt -maxdepth 1 -type d -name "Futu_OpenD*" ! -name FutuOpenD -exec rm -rf {} \; 2>/dev/null || true
 
 chmod +x /opt/FutuOpenD/FutuOpenD
 

@@ -30,6 +30,9 @@ fi
 sed -i 's|^[[:space:]]*<ip>[0-9.]*</ip>|  <ip>0.0.0.0</ip>|' "$CONFIG" 2>/dev/null || true
 sed -i 's|^[[:space:]]*<telnet_ip>[0-9.]*</telnet_ip>|  <telnet_ip>0.0.0.0</telnet_ip>|' "$CONFIG" 2>/dev/null || true
 
+# 删除所有 login_pwd_md5 行（注释/非注释），避免 MD5 格式错误导致 OpenD 退出
+sed -i '/login_pwd_md5/d' "$CONFIG" 2>/dev/null || true
+
 # 清掉 tarball 自带的假账号密码
 if [ -z "$FUTU_LOGIN_ACCOUNT" ]; then
     # 检查当前 xml 是否有非空账户（比如自带的假账号 100000）

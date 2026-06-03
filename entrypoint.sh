@@ -36,8 +36,10 @@ echo "📋 当前 OpenD 配置:"
 grep -E "(login_account|ip>|port>)" "$CONFIG" | sed 's/<login_pwd>.*<\/login_pwd>/<login_pwd>****<\/login_pwd>/'
 echo ""
 
-# ── 2. 启动虚拟显示器 ─────────────────────────────
+# ── 2. 清理残留锁文件 + 启动虚拟显示器 ──────────────
 echo "🖥️  启动 Xvfb (虚拟显示器 :1)..."
+# 清理可能残留的 X 锁文件（容器重启导致）
+rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null
 Xvfb :1 -screen 0 ${VNC_RESOLUTION:-1280x720x16} -ac +extension GLX +render &
 XVFB_PID=$!
 sleep 1

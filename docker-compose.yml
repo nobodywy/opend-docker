@@ -8,9 +8,9 @@ services:
     environment:
       # 虚拟桌面分辨率
       VNC_RESOLUTION: "1280x720x16"
-      # ── 登录凭证（填你的牛牛号和密码）──
-      FUTU_LOGIN_ACCOUNT: "你的牛牛号"
-      FUTU_LOGIN_PWD: "你的登录密码"
+      # ── 登录凭证（从 .env 文件读取）──
+      FUTU_LOGIN_ACCOUNT: ${FUTU_LOGIN_ACCOUNT}
+      FUTU_LOGIN_PWD: ${FUTU_LOGIN_PWD}
 
     volumes:
       # ── 持久化 OpenD 配置（登录态、偏好设置）────
@@ -20,7 +20,7 @@ services:
 
     networks:
       openclaw_lan_net:
-        ipv4_address: <你的 OpenD 静态 IP>
+        ipv4_address: ${OPEND_IP}
 
     logging:
       driver: "json-file"

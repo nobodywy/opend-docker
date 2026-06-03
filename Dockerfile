@@ -17,9 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnspr4 \
     libgtk2.0-0 libcanberra-gtk-module libcanberra-gtk3-module \
     libx11-xcb1 libxcb1 libxcb-util1 \
+    libgl1-mesa-glx libgl1-mesa-dri xcompmgr \
     && rm -rf /var/lib/apt/lists/*
 
-# ── noVNC 设置 ────────────────────────────────────
+# ── 强制软件渲染（Docker 容器无 GPU）───────────────
+ENV LIBGL_ALWAYS_SOFTWARE=1
 RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 
 # ── 下载安装 OpenD ─────────────────────────────────

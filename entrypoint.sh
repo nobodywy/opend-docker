@@ -76,6 +76,11 @@ echo "🪟 启动 Openbox..."
 openbox --replace &
 sleep 1
 
+# ── 启动合成管理器（修复 OpenD GUI 渲染黑/灰屏）───
+echo "🎨 启动 xcompmgr..."
+DISPLAY=:1 xcompmgr -n &
+sleep 1
+
 # ── 4. 设置桌面背景色 ─────────────────────────────
 echo "🎨 设置桌面背景..."
 DISPLAY=:1 xsetroot -solid "#2e3440" 2>/dev/null || true
@@ -84,6 +89,7 @@ DISPLAY=:1 xsetroot -solid "#2e3440" 2>/dev/null || true
 echo "📈 启动 FutuOpenD..."
 cd "$OPEND_HOME"
 export LD_LIBRARY_PATH="${OPEND_HOME}:${LD_LIBRARY_PATH}"
+export LIBGL_ALWAYS_SOFTWARE=1
 DISPLAY=:1 ./FutuOpenD &
 OPEND_PID=$!
 sleep 5

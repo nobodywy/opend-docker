@@ -62,22 +62,21 @@ echo ""
 echo "🖥️  启动 TigerVNC X 服务器 :1..."
 # 清理残留
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null
-fuser -k 5900/tcp 2>/dev/null || true
-sleep 1
-
-# TigerVNC: 内建 X 服务器 + VNC，端口 5900，仅本地监听
+# TigerVNC: 内建 X 服务器 + VNC，显示 :1 = 端口 5901，仅本地
 Xtigervnc :1 \
     -geometry 1280x720 -depth 24 \
     -localhost -SecurityTypes None \
     -AlwaysShared -AcceptSetDesktopSize=0 \
-    &
-sleep 3
+    &>/tmp/tigervnc.log &
+sleep 4
 
+# 检查是否启动成功
 if ! pgrep Xtigervnc >/dev/null; then
-    echo "❌ TigerVNC 启动失败！"
+    echo "❌ TigerVNC 启动失败！日志:"
+    cat /tmp/tigervnc.log
     exit 1
 fi
-echo "✅ TigerVNC X 服务器已启动 (DISPLAY=:1, VNC=5900)"
+echo "✅ TigerVNC X 服务器已启动 (DISPLAY=:1, VNC=5901)"
 
 # ── 3. 启动窗口管理器 + 桌面 ───────────────────────
 echo "🪟 启动 Openbox..."

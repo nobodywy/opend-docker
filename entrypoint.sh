@@ -105,7 +105,7 @@ echo "✅ FutuOpenD 已启动 (PID: $OPEND_PID)"
 
 # ── 5. 启动 noVNC Web 服务 ─────────────────────────
 echo "🌐 启动 noVNC (Web GUI → 端口 6080)..."
-websockify --web /usr/share/novnc/ 0.0.0.0:6080 127.0.0.1:5900 &
+websockify --web /usr/share/novnc/ 0.0.0.0:6080 127.0.0.1:5901 &
 NOVNC_PID=$!
 sleep 1
 

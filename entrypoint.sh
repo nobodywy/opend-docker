@@ -29,6 +29,9 @@ fi
 # 强制监听 0.0.0.0（Docker 内必须）—— 兼容前后空格
 sed -i 's|^[[:space:]]*<ip>[0-9.]*</ip>|  <ip>0.0.0.0</ip>|' "$CONFIG" 2>/dev/null || true
 sed -i 's|^[[:space:]]*<telnet_ip>[0-9.]*</telnet_ip>|  <telnet_ip>0.0.0.0</telnet_ip>|' "$CONFIG" 2>/dev/null || true
+# 上游 tarball 自带的 xml 常把 telnet 整行注释掉，单独解注释
+sed -i 's|<!--[[:space:]]*<telnet_ip>[0-9.]*</telnet_ip>[[:space:]]*-->|  <telnet_ip>0.0.0.0</telnet_ip>|' "$CONFIG" 2>/dev/null || true
+sed -i 's|<!--[[:space:]]*<telnet_port>[0-9]*</telnet_port>[[:space:]]*-->|  <telnet_port>22222</telnet_port>|' "$CONFIG" 2>/dev/null || true
 
 # 删除所有 login_pwd_md5 行（注释/非注释），避免 MD5 格式错误导致 OpenD 退出
 sed -i '/login_pwd_md5/d' "$CONFIG" 2>/dev/null || true

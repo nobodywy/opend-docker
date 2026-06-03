@@ -8,7 +8,7 @@ ENV VNC_RESOLUTION=1280x720x16
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl wget unzip xz-utils \
     xvfb x11vnc novnc websockify \
-    openbox xterm x11-xserver-utils \
+    openbox xterm x11-xserver-utils x11-utils xdotool \
     libglib2.0-0 libnss3 libgconf-2-4 libxss1 \
     libasound2 libatk-bridge2.0-0 libgtk-3-0 \
     libxkbcommon0 libgbm1 libdrm2 \

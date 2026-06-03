@@ -24,17 +24,19 @@ else
 fi
 echo "   ✅ 使用: $COMPOSE"
 
-# ── 2. 创建 macvlan 网络（如果不存在）──────────────
+# ── 2. 检查 macvlan 网络 ───────────────────────────
 echo ""
 echo "2/5 检查 macvlan 网络..."
-if docker network ls --format '{{.Name}}' | grep -q "^macvlan_net$"; then
-    echo "   ✅ macvlan_net 已存在"
+# 查找已有的 macvlan 网络（可能是 openclaw_lan_net / macvlan_net 等各种名字)
+EXISTING_MACVLAN=$(docker network ls --filter driver=macvlan --format '{{.Name}}' | head -1)
+
+if [ -n "$EXISTING_MACVLAN" ]; then
+    echo "   ✅ 已有 macvlan 网络: $EXISTING_MACVLAN"
+    echo "   📋 compose 文件已配置使用此网络，无需创建"
 else
-    echo "   ⚠️  macvlan_net 不存在，正在创建..."
+    echo "   ⚠️  未找到 macvlan 网络，正在创建 openclaw_lan_net..."
     echo ""
     echo "   请输入你飞牛 NAS 的网卡名称（如 ovs_eth0 / eth0 / ens18）:"
-    echo "   不知道的话，在飞牛 SSH 执行: ip route show default"
-    echo ""
     read -p "   网卡名称: " IFACE
     if [ -z "$IFACE" ]; then
         echo "   ❌ 未输入网卡名，跳过"
@@ -47,8 +49,8 @@ else
             --subnet="$SUBNET" \
             --gateway="$GATEWAY" \
             -o parent="$IFACE" \
-            macvlan_net
-        echo "   ✅ macvlan_net 已创建"
+            openclaw_lan_net
+        echo "   ✅ openclaw_lan_net 已创建"
     fi
 fi
 

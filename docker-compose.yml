@@ -22,7 +22,7 @@ services:
       - ./opend-config:/config
 
     networks:
-      macvlan_net:
+      openclaw_lan_net:
         ipv4_address: <OPEND_IP>
 
     logging:
@@ -33,6 +33,6 @@ services:
 
 # ── 外部网络：复用飞牛上已有的 macvlan ────────────
 networks:
-  macvlan_net:
+  openclaw_lan_net:
     external: true
-    name: macvlan_net
+    name: openclaw_lan_net

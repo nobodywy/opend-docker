@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  opend:
+    build: .
+    container_name: opend
+    restart: unless-stopped
+    environment:
+      # ── 可选：自动填充登录信息 ─────────────────
+      # 如果填了，容器启动时自动写入 OpenD.xml
+      # 不填也没事，进 Web GUI 手动登录就行
+      # FUTU_LOGIN_ACCOUNT: "你的牛牛号"
+      # FUTU_LOGIN_PWD: "你的密码"
+
+      # 虚拟桌面分辨率
+      - VNC_RESOLUTION=1280x720x16
+
+    volumes:
+      # ── 持久化 OpenD 配置（登录态、偏好设置）────
+      # 把 ./opend-config 映射到容器 /config
+      # 如果有自定义 OpenD.xml 放这个目录里
+      - ./opend-config:/config
+
+    networks:
+      macvlan_net:
+        ipv4_address: <OPEND_IP>
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ── 外部网络：复用飞牛上已有的 macvlan ────────────
+networks:
+  macvlan_net:
+    external: true
+    name: macvlan_net

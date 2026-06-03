@@ -103,7 +103,13 @@ echo "✅ FutuOpenD 已启动 (PID: $OPEND_PID)"
 
 # ── 6. 启动 VNC 服务 ───────────────────────────────
 echo "🖥️  启动 x11vnc..."
-x11vnc -display :1 -forever -nopw -quiet -shared -listen 127.0.0.1 &
+pkill x11vnc 2>/dev/null || true
+sleep 1
+# -noxdamage -nowf: 避开合成管理器干扰
+# -rfbport 5900: 固定端口，确保 noVNC 能连上
+x11vnc -display :1 -forever -nopw -quiet -shared \
+    -listen 127.0.0.1 -rfbport 5900 \
+    -noxdamage -nowf &
 X11VNC_PID=$!
 sleep 2
 

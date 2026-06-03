@@ -15,49 +15,82 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcomposite1 libxcursor1 libxi6 libxrandr2 \
     libxtst6 libxdamage1 libva2 libva-drm2 \
     libnspr4 \
+    libgtk2.0-0 libcanberra-gtk-module libcanberra-gtk3-module \
+    libx11-xcb1 libxcb1 libxcb-util1 \
     && rm -rf /var/lib/apt/lists/*
 
 # ── noVNC 设置 ────────────────────────────────────
 RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 
 # ── 下载安装 OpenD ─────────────────────────────────
+# 先下载到 /tmp，再解压到 /opt/
+# OpenD tarball 结构可能是 Futu_OpenD_x.x.x/ 或嵌套多层
 WORKDIR /opt
-RUN curl -sL -o /tmp/opend.tar.gz \
-    "https://www.futunn.com/download/fetch-lasted-link?name=opend-ubuntu" \
-    && mkdir -p /tmp/opend_extract \
-    && tar xzf /tmp/opend.tar.gz -C /tmp/opend_extract --strip-components=1 2>/dev/null \
-    || tar xzf /tmp/opend.tar.gz -C /tmp/opend_extract \
-    && mkdir -p /opt/FutuOpenD \
-    && find /tmp/opend_extract -name "FutuOpenD" -type f -exec cp {} /opt/FutuOpenD/ \; \
-    && find /tmp/opend_extract -name "*.so*" -exec cp {} /opt/FutuOpenD/ \; 2>/dev/null || true \
-    && find /tmp/opend_extract -name "OpenD.xml" -exec cp {} /opt/FutuOpenD/ \; 2>/dev/null || true \
-    && ls -la /tmp/opend_extract \
-    && chmod +x /opt/FutuOpenD/FutuOpenD \
-    && rm -rf /tmp/opend.tar.gz /tmp/opend_extract \
-    && echo "✅ OpenD installed at /opt/FutuOpenD/"
+COPY <<'DOCKEREOF' /tmp/install_opend.sh
+#!/bin/bash
+set -e
 
-# ── 默认 OpenD 配置 ────────────────────────────────
-# 如果解压时没有拿到 OpenD.xml，创建一个默认的
-RUN if [ ! -f /opt/FutuOpenD/OpenD.xml ]; then \
-    echo '<?xml version="1.0" encoding="utf-8"?>' > /opt/FutuOpenD/OpenD.xml; \
-    echo '<config>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <login_account></login_account>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <login_pwd></login_pwd>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <ip>0.0.0.0</ip>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <port>11111</port>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <telnet_ip>0.0.0.0</telnet_ip>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <telnet_port>22222</telnet_port>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '  <log_level>info</log_level>' >> /opt/FutuOpenD/OpenD.xml; \
-    echo '</config>' >> /opt/FutuOpenD/OpenD.xml; \
-    fi
+echo "📥 下载 OpenD..."
+curl -fsSL -o /tmp/opend.tar.gz \
+    "https://www.futunn.com/download/fetch-lasted-link?name=opend-ubuntu"
+
+echo "📦 解压..."
+tar xzf /tmp/opend.tar.gz -C /opt/
+rm /tmp/opend.tar.gz
+
+# 找到 FutuOpenD 可执行文件所在目录
+OPEND_BIN=$(find /opt -maxdepth 4 -name "FutuOpenD" -type f 2>/dev/null | head -1)
+
+if [ -z "$OPEND_BIN" ]; then
+    echo "❌ 未找到 FutuOpenD 可执行文件！"
+    echo "   解压后目录结构:"
+    find /opt -maxdepth 3 -type d | head -20
+    exit 1
+fi
+
+OPEND_DIR=$(dirname "$OPEND_BIN")
+echo "✅ 找到 OpenD: $OPEND_DIR"
+
+# 把整个目录内容移到 /opt/FutuOpenD/
+mkdir -p /opt/FutuOpenD
+shopt -s dotglob
+cp -a "$OPEND_DIR"/* /opt/FutuOpenD/
+shopt -u dotglob
+
+# 删除解压产生的残余目录
+find /opt -maxdepth 1 -type d ! -name FutuOpenD ! -name . -exec rm -rf {} \; 2>/dev/null || true
+
+chmod +x /opt/FutuOpenD/FutuOpenD
+
+# 确保有配置文件（可能叫 OpenD.xml 或 FutuOpenD.xml）
+if [ ! -f /opt/FutuOpenD/OpenD.xml ] && [ ! -f /opt/FutuOpenD/FutuOpenD.xml ]; then
+    echo "📝 创建默认 OpenD.xml ..."
+    cat > /opt/FutuOpenD/OpenD.xml << 'XML'
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+  <login_account></login_account>
+  <login_pwd></login_pwd>
+  <ip>0.0.0.0</ip>
+  <port>11111</port>
+  <telnet_ip>0.0.0.0</telnet_ip>
+  <telnet_port>22222</telnet_port>
+  <log_level>info</log_level>
+</config>
+XML
+fi
+
+echo "📋 /opt/FutuOpenD/ 内容:"
+ls -la /opt/FutuOpenD/
+echo "✅ OpenD 安装完成"
+DOCKEREOF
+
+RUN bash /tmp/install_opend.sh && rm /tmp/install_opend.sh
 
 # ── 复制入口脚本 ───────────────────────────────────
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # ── 端口 ──────────────────────────────────────────
-# 11111: OpenD API
-# 6080:  noVNC Web 界面
 EXPOSE 11111 6080
 
 ENTRYPOINT ["/entrypoint.sh"]

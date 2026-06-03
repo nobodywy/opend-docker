@@ -17,6 +17,9 @@ echo "  🚀 OpenD Docker Container"
 echo "============================================"
 
 # ── 1. 配置文件处理 ──────────────────────────────
+# 删掉缓存（可能存了上次的失败凭据）
+rm -f "${OPEND_HOME}/AppData.dat"
+
 # 如果挂载了自定义配置，覆盖默认
 if [ -f /config/FutuOpenD.xml ]; then
     echo "📄 使用挂载的自定义配置: /config/FutuOpenD.xml"

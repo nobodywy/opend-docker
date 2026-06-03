@@ -6,10 +6,6 @@ services:
     container_name: opend
     restart: unless-stopped
     environment:
-      # ── 填入你的真实富途账号 ─────────────────
-      # OpenD 10.6+ 必须有真实凭据才能启动，不再支持空凭据+GUI弹出登录
-      FUTU_LOGIN_ACCOUNT: "你的牛牛号"
-      FUTU_LOGIN_PWD: "你的密码"
       # 虚拟桌面分辨率
       VNC_RESOLUTION: "1280x720x16"
 

@@ -2,12 +2,13 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:1
-ENV VNC_RESOLUTION=1280x720x16
+ENV VNC_RESOLUTION=1280x720x24
 
 # ── 系统依赖 ──────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates curl wget unzip xz-utils \
-    xvfb x11vnc novnc websockify \
+    tigervnc-standalone-server tigervnc-common \
+    novnc websockify \
     openbox xterm x11-xserver-utils x11-utils xdotool \
     libglib2.0-0 libnss3 libgconf-2-4 libxss1 \
     libasound2 libatk-bridge2.0-0 libgtk-3-0 \
@@ -20,8 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx libgl1-mesa-dri xcompmgr psmisc \
     && rm -rf /var/lib/apt/lists/*
 
-# ── 强制软件渲染（Docker 容器无 GPU）───────────────
+# ── 强制软件渲染 + Qt 兼容 ─────────────────────────
 ENV LIBGL_ALWAYS_SOFTWARE=1
+ENV QT_XCB_FORCE_SOFTWARE_OPENGL=1
+ENV QT_QUICK_BACKEND=software
 RUN ln -sf /usr/share/novnc/vnc.html /usr/share/novnc/index.html
 
 # ── 下载安装 OpenD ─────────────────────────────────

@@ -58,34 +58,36 @@ echo "📋 当前 OpenD 配置:"
 grep -E '(login_account|login_pwd|ip>|api_port)' "$CONFIG" | sed 's/<login_pwd>[^<]*<\/login_pwd>/<login_pwd>****<\/login_pwd>/'
 echo ""
 
-# ── 2. 清理残留锁文件 + 启动虚拟显示器 ──────────────
-echo "🖥️  启动 Xvfb (虚拟显示器 :1)..."
+# ── 2. 启动 TigerVNC X 服务器（自带 VNC）───────────
+echo "🖥️  启动 TigerVNC X 服务器 :1..."
+# 清理残留
 rm -f /tmp/.X1-lock /tmp/.X11-unix/X1 2>/dev/null
-Xvfb :1 -screen 0 ${VNC_RESOLUTION:-1280x720x16} -ac +extension GLX +render &
-XVFB_PID=$!
+fuser -k 5900/tcp 2>/dev/null || true
 sleep 1
 
-if ! kill -0 $XVFB_PID 2>/dev/null; then
-    echo "❌ Xvfb 启动失败！"
+# TigerVNC: 内建 X 服务器 + VNC，端口 5900，仅本地监听
+Xtigervnc :1 \
+    -geometry 1280x720 -depth 24 \
+    -localhost -SecurityTypes None \
+    -AlwaysShared -AcceptSetDesktopSize=0 \
+    &
+sleep 3
+
+if ! pgrep Xtigervnc >/dev/null; then
+    echo "❌ TigerVNC 启动失败！"
     exit 1
 fi
-echo "✅ Xvfb 已启动 (PID: $XVFB_PID)"
+echo "✅ TigerVNC X 服务器已启动 (DISPLAY=:1, VNC=5900)"
 
-# ── 3. 启动轻量窗口管理器 ──────────────────────────
+# ── 3. 启动窗口管理器 + 桌面 ───────────────────────
 echo "🪟 启动 Openbox..."
-openbox --replace &
+DISPLAY=:1 openbox &
 sleep 1
 
-# ── 启动合成管理器（修复 OpenD GUI 渲染黑/灰屏）───
-echo "🎨 启动 xcompmgr..."
-DISPLAY=:1 xcompmgr -n &
-sleep 1
-
-# ── 4. 设置桌面背景色 ─────────────────────────────
 echo "🎨 设置桌面背景..."
 DISPLAY=:1 xsetroot -solid "#2e3440" 2>/dev/null || true
 
-# ── 5. 启动 OpenD GUI ─────────────────────────────
+# ── 4. 启动 OpenD GUI ─────────────────────────────
 echo "📈 启动 FutuOpenD..."
 cd "$OPEND_HOME"
 export LD_LIBRARY_PATH="${OPEND_HOME}:${LD_LIBRARY_PATH}"
@@ -101,28 +103,7 @@ if ! kill -0 $OPEND_PID 2>/dev/null; then
 fi
 echo "✅ FutuOpenD 已启动 (PID: $OPEND_PID)"
 
-# ── 6. 启动 VNC 服务 ───────────────────────────────
-echo "🖥️  启动 x11vnc..."
-# 彻底清理：杀掉所有 x11vnc + tkx11vnc，释放 5900 端口
-pkill -9 x11vnc 2>/dev/null || true
-pkill -9 -f tkx11vnc 2>/dev/null || true
-fuser -k 5900/tcp 2>/dev/null || true
-sleep 2
-# -gui none: 不启动 tk GUI（避免它占 5900）
-# -rfbport 5900: 强制固定端口
-# -noxdamage -nowf: 避免合成管理器黑屏
-x11vnc -display :1 -forever -nopw -quiet -shared \
-    -listen 127.0.0.1 -rfbport 5900 -gui none \
-    -noxdamage -nowf &
-X11VNC_PID=$!
-sleep 2
-
-if ! kill -0 $X11VNC_PID 2>/dev/null; then
-    echo "⚠️  x11vnc 启动失败！Web GUI 将不可用"
-fi
-echo "✅ x11vnc 已启动 (PID: $X11VNC_PID)"
-
-# ── 7. 启动 noVNC Web 服务 ─────────────────────────
+# ── 5. 启动 noVNC Web 服务 ─────────────────────────
 echo "🌐 启动 noVNC (Web GUI → 端口 6080)..."
 websockify --web /usr/share/novnc/ 0.0.0.0:6080 127.0.0.1:5900 &
 NOVNC_PID=$!
@@ -146,7 +127,7 @@ echo "  🔓 实盘交易   : 在 Web GUI 中点「解锁交易」"
 echo "============================================"
 
 # ── 保持容器运行 + 健康监控 ─────────────────────
-trap "echo '🛑 收到退出信号，清理...'; kill $OPEND_PID $XVFB_PID $X11VNC_PID $NOVNC_PID 2>/dev/null; exit 0" SIGTERM SIGINT
+trap "echo '🛑 收到退出信号，清理...'; kill $OPEND_PID $NOVNC_PID 2>/dev/null; exit 0" SIGTERM SIGINT
 
 while true; do
     if ! kill -0 $OPEND_PID 2>/dev/null; then
